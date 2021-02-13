@@ -1,0 +1,73 @@
+#!/bin/bash
+
+subdomain()
+{
+ 
+amass enum -d $1 --passive -o $1-amass.txt
+ 
+subfinder -d $1 -o $1-subfinder.txt
+ 
+python3 ~/tools/subdomain/Sublist3r/sublist3r.py -d $1 -o $1-sublist3r.txt
+ 
+cat $1-amass.txt $1-subfinder.txt $1-sublist3r.txt > final1-$1.txt
+
+cat final1-$1.txt | sort -u > final-$1.txt
+
+rm final1-$1.txt
+mkdir $1-subdomain
+mv  $1-subfinder.txt $1-amass.txt $1-sublist3r.txt final-$1.txt  $1-subdomain
+cd $1-subdomain
+cat final-$1.txt | httpx -status-code -title -o httpx.txt
+cat httpx.txt | gau -subs| grep '='|egrep -v '(.js|.png|.svg|.gif|.jpg|.jpeg|.txt|.css|.ico)'|qsreplace "test{{7*7}}" | while read url; do cur=$(curl -s $url |grep "test49"); echo -e "$url -> $cur";done
+
+cat httpx.txt | aquatone
+nuclei -l final-$1.txt -t subdomain-takeover -t vulnerabilites -t panels -t default-credentials -t technologies -t security-misconfiguration -t cves -t dns -t files -t generic-detections -t tokens -t workflows -o $1-nuclei.txt
+
+}
+n()
+{
+nuclei -l $1 -t subdomain-takeover -t vulnerabilites -t panels -t default-credentials -t technologies -t security-misconfiguration -t cves -t dns -t files -t generic-detections -t tokens -t workflows
+}
+ext(){
+waybackurls $1| grep -iE “\.js$” | sort -u
+}
+trial()
+{
+subfinder -dL $1 -o subdomains.txt && subjack -w subdomains.txt |toslack
+}
+test()
+{
+cat $1 | grep -aoP "(?<=(\"|\'|\`))\/[a-zA-Z0-9_?&=\/\-\#\.]*(?=(\"|\'|\`))" | sort -u
+}
+
+#extensions for dirsearch
+# -e txt,doc,docx,odt,pdf,rtf,sxw,psw,ppt,pptx,pps,csv,mdb
+# ffuf command to use
+# ffuf -w path/to/wordlist.txt -u https :// sub .target. com/FUZZ -mc all -c -v
+
+dir()
+{
+python3 ~/tools/dirsearch/dirsearch.py -e * -t 40 -u $1
+}
+dir0()
+{
+python3 ~/tools/dirsearch/dirsearch.py -e * -t 40 -u $1  -o $1.txt
+}
+dirw()
+{
+python3 ~/tools/dirsearch/dirsearch.py -e * -t 40 -u $1  -o $1.txt -w $2
+}
+# ^.*?google\..*$     in place of google enter your website name
+# tips
+#   at final-seek.com.au.txt | gau -subs| grep '='|egrep -v '(.js|.png|.svg|.gif|.jpg|.jpeg|.txt|.css|.ico)'|qsreplace "test{{7*7}}" | while read url; do cur=$(curl -s $url |grep "test49"); echo -e "$url -> $cur";done
+# to find
+# gau hacked-website | waybackurls | grep ".xlsx"
+
+cors()
+{
+site="$1"; gau "$site" | while read url;do target=$(curl -s -i -H "Origin: https://evil.com" -X GET $url) | if grep 'https://evil.com'; then [cors found] echo $url;else echo Nothing on" $url";fi;done
+}
+getSubdomainNamesFromSubdomainList()
+{
+cat final-woila.se.txt |sort -u | rev| cut -d"." -f3- |rev| sed 's/-/\n/g'| sed 's/\./\n/g'| sort -u
+}
