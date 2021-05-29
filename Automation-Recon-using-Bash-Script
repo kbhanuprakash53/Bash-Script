@@ -7,7 +7,7 @@ amass enum -d $1 --passive -o $1-amass.txt
  
 subfinder -d $1 -o $1-subfinder.txt
  
-python3 ~/tools/subdomain/Sublist3r/sublist3r.py -d $1 -o $1-sublist3r.txt
+python3 ~/tools/Sublist3r/sublist3r.py -d $1 -o $1-sublist3r.txt
  
 cat $1-amass.txt $1-subfinder.txt $1-sublist3r.txt > final1-$1.txt
 
@@ -21,7 +21,7 @@ cat final-$1.txt | httpx -status-code -title -o httpx.txt
 cat httpx.txt | gau -subs| grep '='|egrep -v '(.js|.png|.svg|.gif|.jpg|.jpeg|.txt|.css|.ico)'|qsreplace "test{{7*7}}" | while read url; do cur=$(curl -s $url |grep "test49"); echo -e "$url -> $cur";done
 
 cat httpx.txt | aquatone
-nuclei -l final-$1.txt -t subdomain-takeover -t vulnerabilites -t panels -t default-credentials -t technologies -t security-misconfiguration -t cves -t dns -t files -t generic-detections -t tokens -t workflows -o $1-nuclei.txt
+nuclei -l final-$1.txt -t nuclei-templates -o $1-nuclei.txt
 
 }
 n()
